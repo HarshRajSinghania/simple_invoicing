@@ -18,6 +18,7 @@ from src.schemas.credit_note import CreditNoteCreate, CreditNoteOut, PaginatedCr
 from src.services.credit_note import cancel_credit_note, create_credit_note
 from src.services.share_documents import render_credit_note_pdf
 from src.services.company_access import company_scope
+from src.api.search import contains_pattern
 
 router = APIRouter()
 
@@ -106,8 +107,8 @@ def list_credit_notes(
         # A supplier's note is looked up by their number, not the one we gave it.
         q = q.filter(
             or_(
-                CreditNote.credit_note_number.ilike(f"%{search}%"),
-                CreditNote.supplier_credit_note_number.ilike(f"%{search}%"),
+                CreditNote.credit_note_number.ilike(contains_pattern(search), escape="\"),
+                CreditNote.supplier_credit_note_number.ilike(contains_pattern(search), escape="\"),
             )
         )
 
