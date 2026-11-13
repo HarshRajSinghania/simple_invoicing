@@ -137,3 +137,19 @@ class TestInvoiceExportCsv:
         }))
         assert len(rows) == 2  # header + Mar 20 sales
         assert rows[1][1] == "2026-03-20"
+
+
+    def test_export_marks_cancelled_invoices(self, client):
+        product = _create_product(client, "VF-CANCEL", "Cancel Product")
+        sales_ledger = _create_ledger(client, "Cancel Customer", "27AADCB2230M1ZT")
+        invoice = _create_invoice(client, product["id"], sales_ledger["id"], "sales", "2026-03-10")
+        invoice_id = invoice["id"]
+        # Cancel the invoice
+        cancel_res = client.delete(f"/api/invoices/{invoice_id}")
+        assert cancel_res.status_code == 200, cancel_res.text
+        # Export including cancelled
+        rows = self._read_csv(client.get("/api/invoices/export", params={"show_cancelled": "true"}))
+        # Find the cancelled invoice row
+        cancelled_rows = [r for r in rows[1:] if r[0] == invoice["invoice_number"]]
+        assert len(cancelled_rows) == 1
+        assert cancelled_rows[0][-1] == "cancelled"
